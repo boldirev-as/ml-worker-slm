@@ -1,0 +1,7 @@
+/models/yolo_model_segm.engine
+/models/yolo_model_segm.pt
+/all_printers/
+/venv/
+/models/model_logisticRegression.pkl
+/settings.ini
+/models/
