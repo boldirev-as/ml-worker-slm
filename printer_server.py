@@ -1,4 +1,5 @@
 import cv2
+from celery import Celery
 from fastapi import FastAPI
 import configparser
 
@@ -6,12 +7,13 @@ import numpy as np
 from httpx import Client
 from starlette.responses import JSONResponse
 
-from tasks import evaluate_layer
 from requests_for_backend import setup_layer, add_photos_to_layer, create_new_project
 from utils import get_svg_data
 
 config = configparser.ConfigParser()
 config.read("settings.ini")
+
+celery_client = Celery('tasks', broker='redis://0.0.0.0:6379', backend='redis://0.0.0.0:6379')
 
 main_client = Client()
 CURRENT_PROJECT_DETAILS = {'ID': '65a93274fa30c179992ab501'}
@@ -56,7 +58,8 @@ def start(project_name: str, layer_number: int):
     svg_array = get_svg_data(svg_path)
     svg_bytes = svg_array.tobytes()
 
-    result = evaluate_layer.delay(img_bytes, prev_img_bytes, svg_bytes, svg_array.shape)
+    result = celery_client.send_task('tasks.evaluate_layer',
+                                     (img_bytes, prev_img_bytes, svg_bytes, svg_array.shape))
 
     try:
         result = result.get()
