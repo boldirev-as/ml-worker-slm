@@ -1,14 +1,16 @@
 import cairosvg
 import cv2
+import httpx
 from httpx import Client
+import json
 
 from utils import get_svg_data
 
 URL_BACKEND = 'http://158.160.126.165:8000/'
 
 
-def create_new_printer():
-    with Client() as client:
+def create_new_printer(client: httpx.Client):
+    with client:
         response = client.post(URL_BACKEND + 'printers',
                                json={
                                    'uid': '213213',
@@ -18,49 +20,50 @@ def create_new_printer():
     return response
 
 
-def create_new_project():
-    with Client() as client:
-        response = client.post(URL_BACKEND + 'projects',
-                               json={
-                                   'printer_uid': '213213',
-                                   'name': 'Project for creating a little pony',
-                                   'layers_len': 100
-                               })
+def create_new_project(client, layers_len=100):
+    response = client.post(URL_BACKEND + 'projects/',
+                           json={
+                               'printer_uid': '213213',
+                               'name': 'Project for creating a little pony',
+                               'layers_len': layers_len
+                           })
     return response.json()['id']
 
 
-def setup_layer(layer_num, project_id, warns):
-    with Client() as client:
-        response = client.post(URL_BACKEND + 'create_layer',
-                               json={
-                                   "order": layer_num,
-                                   "project_id": project_id,
-                                   "warns": warns
-                               })
+def setup_layer(layer_num, project_id, warns, client):
+    response = client.post(URL_BACKEND + 'create_layer',
+                           json={
+                               "order": layer_num,
+                               "project_id": project_id,
+                               "warns": warns
+                           })
     return response.json()['id']
 
 
-def add_photos_to_layer(layer_id, before_melting_img, after_melting_img, svg_img):
-    with Client() as client:
-        response = client.post(URL_BACKEND + 'add_photos_to_layer',
-                               data={
-                                   'layer_id': layer_id,
-                               },
-                               files={
-                                   'before_melting_image': before_melting_img,
-                                   'after_melting_image': after_melting_img,
-                                   'svg_image': svg_img
-                               })
-    print(response)
-    print(response.text)
+def add_photos_to_layer(layer_id, before_melting_img, after_melting_img, svg_img, client):
+    response = client.post(URL_BACKEND + 'add_photos_to_layer',
+                           data={
+                               'layer_id': layer_id,
+                           },
+                           files=[
+                               ('before_melting_image', ('before.jpg', before_melting_img)),
+                               ('after_melting_image', ('after.jpg', after_melting_img)),
+                               ('svg_image', ('svg.svg', svg_img)),
+                           ])
     return response
 
 
 if __name__ == '__main__':
     # setup_layer(0, '65a8c92d3b36820d63d99ff6', [])
     # 65a8c92d3b36820d63d99ff6
+    main_client = Client()
+    # create_new_printer()
+    # project_id = create_new_project(main_client, 3000)
+    project_id = '65a93274fa30c179992ab501'
 
-    layer_id = setup_layer(0, '65a8c92d3b36820d63d99ff6', [])
+    print(project_id)
+
+    layer_id = setup_layer(0, project_id, [], main_client)
     print(layer_id)
 
     img = cv2.imread('all_printers/printer/print4_01251-recoat.jpeg')

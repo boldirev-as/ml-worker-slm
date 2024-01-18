@@ -31,11 +31,20 @@ def classify_metal_absence(img: np.array, prev_img: np.array, svg: np.array) -> 
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     prev_img = cv2.cvtColor(prev_img, cv2.COLOR_BGR2GRAY)
 
-    comparing = peak_signal_noise_ratio(img, prev_img)  #
-    similarity_metric = classifier.predict([[comparing]])[0]
+    comparing = peak_signal_noise_ratio(img, prev_img)
+    similarity_metric = classifier.predict_proba([[comparing]])[0][0]
+
+    alerts = []
+    if similarity_metric > 0.5:
+        alerts.append({
+            'value': similarity_metric,
+            'info': 'There is no enough metal in SLM container',
+            'error_type': 'METAL_ABSENCE'
+        })
+
     return {
         'visualizations': None,
-        'alerts': [{'value': int(similarity_metric), 'info': '', 'error_type': 'METAL_ABSENCE'}]
+        'alerts': alerts
     }
 
 
@@ -54,9 +63,18 @@ def detect_defected_wiper(img: np.array, prev_img: np.array, svg: np.array) -> d
     results = model(img)
     error_ratio, annotated_frame = get_defects_info(results, svg, img)
     np_annotated_frame = np.array(annotated_frame.convert('RGB'))
+
+    alerts = []
+    if results[0].masks is not None:
+        alerts.append({
+            'value': error_ratio,
+            'info': 'Wiper defected and can affect the result of SLM',
+            'error_type': 'WIPER_DEFECTED'
+        })
+
     return {
         'visualizations': np_annotated_frame,
-        'alerts': [{'value': error_ratio, 'info': '', 'error_type': 'WIPER_DEFECTED'}]
+        'alerts': alerts
     }
 
 
