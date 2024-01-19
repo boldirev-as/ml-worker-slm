@@ -17,7 +17,10 @@ celery_client = Celery('tasks', broker='redis://46.45.33.28:22080',
                        backend='redis://46.45.33.28:22080')
 
 main_client = Client()
-CURRENT_PROJECT_DETAILS = {'ID': '65a93274fa30c179992ab501'}
+CURRENT_PRINTER_DETAILS = {
+    'PRINTER_UID': '213213',
+    'PROJECT_ID': '65a93274fa30c179992ab501'
+}
 
 REASON_TO_ID = {
     'WIPER_DEFECTED': 0,
@@ -30,10 +33,10 @@ app = FastAPI()
 @app.get("/start_processing/")
 def start(project_name: str, layer_number: int):
     if layer_number == 1:
-        CURRENT_PROJECT_DETAILS['ID'] = create_new_project(main_client, 3000)
+        CURRENT_PRINTER_DETAILS['PROJECT_ID'] = create_new_project(main_client, 3000)
 
     if layer_number < 40:
-        return {"warns": [], "project_id": CURRENT_PROJECT_DETAILS['ID'], "order": layer_number,
+        return {"warns": [], "project_id": CURRENT_PRINTER_DETAILS['PROJECT_ID'], "order": layer_number,
                 "printer_uid": "", "before_melting_image": "",
                 "after_melting_image": "",
                 "svg_image": "", "id": ""}
@@ -89,7 +92,7 @@ def start(project_name: str, layer_number: int):
 
     svg_bytes = open(svg_path, mode='rb').read()
 
-    layer_id = setup_layer(layer_number, CURRENT_PROJECT_DETAILS['ID'], warns, main_client)
+    layer_id = setup_layer(layer_number, CURRENT_PRINTER_DETAILS['PROJECT_ID'], warns, main_client)
     response = add_photos_to_layer(layer_id, img_bytes, after_melting_img_bytes, svg_bytes, main_client)
 
     print('image processed', response.text)

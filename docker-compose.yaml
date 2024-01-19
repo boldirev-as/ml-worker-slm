@@ -8,3 +8,4 @@ services:
       - 8010:6379
   web:
     build:
+      dockerfile: Dockerfile

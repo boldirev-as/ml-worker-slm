@@ -1,8 +1,10 @@
 import requests
+from tqdm import tqdm
 
-for layer_num in range(1500, 1510):
+for layer_num in tqdm(range(1, 2000)):
     res = requests.get('http://0.0.0.0:8090/start_processing/',
                        params={
                            'project_name': 'all_printers/print4/2024-01-04 15%3A28%3A26/',
                            'layer_number': layer_num})
-    print(res, res.text, res.elapsed.total_seconds())
+    if res.status_code >= 300:
+        print(res, res.text, res.elapsed.total_seconds())
