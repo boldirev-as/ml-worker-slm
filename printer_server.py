@@ -35,7 +35,7 @@ def start(project_name: str, layer_number: int):
     if layer_number == 1:
         CURRENT_PRINTER_DETAILS['PROJECT_ID'] = create_new_project(main_client, 3000)
 
-    if layer_number < 40:
+    if layer_number < 3:
         return {"warns": [], "project_id": CURRENT_PRINTER_DETAILS['PROJECT_ID'], "order": layer_number,
                 "printer_uid": "", "before_melting_image": "",
                 "after_melting_image": "",
@@ -45,7 +45,7 @@ def start(project_name: str, layer_number: int):
     add_zeros2 = '0' * (5 - len(str(layer_number - 1)))
 
     # PATH PATH PATH
-    svg_path = "all_printers/printer/00296.svg"  # TODO: create normal svg filename
+    svg_path = f"{project_name}/../svg/{add_zeros}{layer_number}.svg"  # TODO: create normal svg filename
     img_recoat_path = f'{project_name}/{add_zeros}{layer_number}-recoat.jpg'
     img_scan_path = f'{project_name}/{add_zeros}{layer_number}-scan.jpg'
     img_recoat_prev_path = f'{project_name}/{add_zeros2}{layer_number - 1}-recoat.jpg'
@@ -69,7 +69,7 @@ def start(project_name: str, layer_number: int):
         result = result.get()
     except Exception as e:
         return JSONResponse(
-            status_code=418,
+            status_code=404,
             content={"message": f"Oops! Celery did something: {e}"},
         )
 

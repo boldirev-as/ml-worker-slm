@@ -6,6 +6,15 @@ services:
     restart: always
     ports:
       - 8010:6379
+
   web:
     build:
       dockerfile: Dockerfile
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]

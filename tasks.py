@@ -6,15 +6,15 @@ import cv2
 import pickle
 from skimage.metrics import structural_similarity as peak_signal_noise_ratio
 
-app = Celery('tasks', broker='redis://0.0.0.0:8010', backend='redis://0.0.0.0:8010')
+app = Celery('tasks', broker='redis://redis-stack-server:6379', backend='redis://redis-stack-server:6379')
 # app = Celery('tasks', broker='redis://46.45.33.28:22080', backend='redis://46.45.33.28:22080')
 
 app.control.time_limit('tasks.evaluate_layer',
                        soft=1, hard=2, reply=True)
 
 # Load a model for segmentation
-model = YOLO('models/yolo_model_segm.pt')
-# model = YOLO("yolo_model_segm.engine", task="segment")
+# model = YOLO('models/yolo_model_segm.pt')
+model = YOLO("models/yolo_model_segm.engine", task="segment")
 
 # open dump model for classification wiper
 with open('models/model_logisticRegression.pkl', 'rb') as f:
@@ -62,8 +62,8 @@ def detect_defected_wiper(img: np.array, prev_img: np.array, svg: np.array) -> d
     for information about issues (metric - error rate)
     """
 
-    # results = model.predict([img], imgsz=1024)
-    results = model(img)
+    results = model.predict([img], imgsz=1024)
+    # results = model(img)
     error_ratio, annotated_frame = get_defects_info(results, svg, img)
     np_annotated_frame = np.array(annotated_frame.convert('RGB'))
 
