@@ -13,7 +13,8 @@ from utils import get_svg_data
 config = configparser.ConfigParser()
 config.read("settings.ini")
 
-celery_client = Celery('tasks', broker='redis://0.0.0.0:6379', backend='redis://0.0.0.0:6379')
+celery_client = Celery('tasks', broker='redis://46.45.33.28:22080',
+                       backend='redis://46.45.33.28:22080')
 
 main_client = Client()
 CURRENT_PROJECT_DETAILS = {'ID': '65a93274fa30c179992ab501'}
