@@ -19,7 +19,7 @@ celery_client = Celery('tasks', broker='redis://46.45.33.28:22080',
 main_client = Client()
 CURRENT_PRINTER_DETAILS = {
     'PRINTER_UID': '213213',
-    'PROJECT_ID': '65a93274fa30c179992ab501'
+    'PROJECT_ID': '65ab4eeb76e17c6e63c9af1d'
 }
 
 REASON_TO_ID = {
