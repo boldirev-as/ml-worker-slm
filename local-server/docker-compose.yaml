@@ -1,0 +1,7 @@
+version: '1'
+services:
+  local-fastapi:
+    build:
+      dockerfile: Dockerfile
+    ports:
+      - 8090

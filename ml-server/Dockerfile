@@ -18,6 +18,6 @@ RUN apt install libcairo2
 
 # FROM nvidia/cuda:12.3.1-base-ubuntu20.04
 
-COPY . .
+COPY .. .
 CMD ["celery", "-A", "tasks", "worker", "--loglevel=INFO"]
 # CMD ["nvidia-smi"]

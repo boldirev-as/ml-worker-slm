@@ -1,0 +1,14 @@
+fastapi
+CairoSVG
+cairocffi
+pillow
+opencv-python
+celery
+numpy
+httpx
+scikit-learn
+scikit-image
+ultralytics
+beautifulsoup4
+Redis
+nvidia-tensorrt

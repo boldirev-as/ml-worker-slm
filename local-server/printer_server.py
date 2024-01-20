@@ -77,7 +77,7 @@ def start(project_name: str, layer_number: int):
     img_bytes = result['visualizations'][0]
     nparr = np.frombuffer(img_bytes, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    cv2.imwrite('output.jpg', img)
+    cv2.imwrite('../output.jpg', img)
 
     # SEND WORK TO back
     warns = []

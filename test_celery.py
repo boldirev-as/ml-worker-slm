@@ -1,15 +1,10 @@
-import time
-from io import BytesIO
-
 import cv2
-import numpy as np
 from ultralytics import YOLO
 
-from tasks import add
-from utils import processing, get_svg_data, get_defects_info
+from utils import processing
 
 # model = YOLO('yolo_model_segm.pt')  # load a custom model
-model = YOLO("models/yolo_model_segm.engine", task="segment")
+model = YOLO("ml-server/models/yolo_model_segm.engine", task="segment")
 # t = time.time()
 img = cv2.imread('all_printers/printer/print4_01251-recoat.jpeg')
 img = processing(img)

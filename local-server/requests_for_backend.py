@@ -1,10 +1,5 @@
-import cairosvg
-import cv2
 import httpx
 from httpx import Client
-import json
-
-from utils import get_svg_data
 
 URL_BACKEND = 'http://158.160.126.165:8000/'
 

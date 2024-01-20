@@ -1,9 +1,11 @@
 fastapi
-CarioSVG
+CairoSVG
+cairocffi
 pillow
 opencv-python
 celery
 numpy
 httpx
-skimage
-ultralytics
+beautifulsoup4
+Redis
+uvicorn
