@@ -4,4 +4,4 @@ services:
     build:
       dockerfile: Dockerfile
     ports:
-      - 8090
+      - 9080

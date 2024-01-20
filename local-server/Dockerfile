@@ -12,5 +12,5 @@ RUN apt install libcairo2
 # FROM nvidia/cuda:12.3.1-base-ubuntu20.04
 
 COPY .. .
-CMD ["uvicorn", "printer_server:app", "--host 0.0.0.0", "--port 8090"]
+CMD ["uvicorn", "printer_server:app", "--host", "0.0.0.0", "--port", "9080"]
 # CMD ["nvidia-smi"]

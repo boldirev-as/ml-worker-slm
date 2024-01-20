@@ -31,7 +31,7 @@ app = FastAPI()
 
 
 @app.get("/start_processing/")
-def start(project_name: str, layer_number: int):
+def start(project_name: str,  layer_number: int, svg_path: str, img_recoat_path: str, img_scan_path: str, img_recoat_prev_path: str):
     if layer_number == 1:
         CURRENT_PRINTER_DETAILS['PROJECT_ID'] = create_new_project(main_client, 3000)
 
@@ -41,14 +41,14 @@ def start(project_name: str, layer_number: int):
                 "after_melting_image": "",
                 "svg_image": "", "id": ""}
 
-    add_zeros = '0' * (5 - len(str(layer_number)))
-    add_zeros2 = '0' * (5 - len(str(layer_number - 1)))
+    # add_zeros = '0' * (5 - len(str(layer_number)))
+    # add_zeros2 = '0' * (5 - len(str(layer_number - 1)))
 
     # PATH PATH PATH
-    svg_path = f"{project_name}/../svg/{add_zeros}{layer_number}.svg"  # TODO: create normal svg filename
-    img_recoat_path = f'{project_name}/{add_zeros}{layer_number}-recoat.jpg'
-    img_scan_path = f'{project_name}/{add_zeros}{layer_number}-scan.jpg'
-    img_recoat_prev_path = f'{project_name}/{add_zeros2}{layer_number - 1}-recoat.jpg'
+    # svg_path = f"{project_name}/../svg/{add_zeros}{layer_number}.svg"  # TODO: create normal svg filename
+    # img_recoat_path = f'{project_name}/{add_zeros}{layer_number}-recoat.jpg'
+    # img_scan_path = f'{project_name}/{add_zeros}{layer_number}-scan.jpg'
+    # img_recoat_prev_path = f'{project_name}/{add_zeros2}{layer_number - 1}-recoat.jpg'
 
     img = cv2.imread(img_recoat_path)
     img_bytes = cv2.imencode('.jpg', img)[1].tobytes()
