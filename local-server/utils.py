@@ -15,14 +15,15 @@ def get_svg_data(svg_path):
     g_element = soup.find('g')
     if g_element:
         g_element.decompose()
-    return svg_to_numpy(str(soup)).mean(axis=2) != 0
+    np_array_svg, bytes_svg = svg_to_numpy(str(soup))
+    return np_array_svg.mean(axis=2) != 0, bytes_svg
 
 
 def svg_to_numpy(svg_content):
     png_data = cairosvg.svg2png(bytestring=svg_content.encode('utf-8'), output_width=1024, output_height=1024)
     image = Image.open(io.BytesIO(png_data))
     svg_numpy_array = np.rot90(np.fliplr(np.array(image)), k=3)
-    return svg_numpy_array
+    return svg_numpy_array, png_data
 
 
 def gaussian_stretching(pixel_value, mean, sigma, A):

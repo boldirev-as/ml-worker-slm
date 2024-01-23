@@ -1,37 +1,34 @@
-from io import BytesIO
+import time
 
+import cairosvg
 import cv2
-from PIL import Image
-from cairosvg import svg2png
 from celery import Celery
 from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
 import configparser
 
 import numpy as np
-from httpx import Client
-# from starlette.responses import JSONResponse
 
 from requests_for_backend import setup_layer, add_photos_to_layer, create_new_project
-from utils import get_svg_data
+from utils import get_svg_data, processing
 
 config = configparser.ConfigParser()
 config.read("settings.ini")
 
-# celery_client = Celery('tasks', broker='redis://0.0.0.0:8010',
-#                        backend='redis://0.0.0.0:8010')
-celery_client = Celery('tasks', broker='redis://46.45.33.28:22080',
-                       backend='redis://46.45.33.28:22080')
+celery_client = Celery('tasks', broker='redis://0.0.0.0:8010',
+                       backend='redis://0.0.0.0:8010')
+# celery_client = Celery('tasks', broker='redis://46.45.33.28:22080',
+#                        backend='redis://46.45.33.28:22080')
 
-main_client = Client()
 CURRENT_PRINTER_DETAILS = {
     'PRINTER_UID': '213213',
-    'PROJECT_ID': '65ab4eeb76e17c6e63c9af1d'
+    'PROJECT_ID': '65b0053215cc3ebf6d57c835'
 }
 
 REASON_TO_ID = {
     'WIPER_DEFECTED': 0,
-    'METAL_ABSENCE': 1
+    'METAL_ABSENCE': 1,
+    'LAZER_INSTANCE': 2
 }
 
 app = FastAPI()
@@ -41,7 +38,7 @@ app = FastAPI()
 def start(project_name: str, layer_number: int, svg_path: str, img_recoat_path: str, img_scan_path: str,
           img_recoat_prev_path: str):
     if layer_number == 1:
-        CURRENT_PRINTER_DETAILS['PROJECT_ID'] = create_new_project(main_client, 3000)
+        CURRENT_PRINTER_DETAILS['PROJECT_ID'] = create_new_project(3000)
 
     if layer_number < 3:
         return {"warns": [], "project_id": CURRENT_PRINTER_DETAILS['PROJECT_ID'], "order": layer_number,
@@ -49,50 +46,50 @@ def start(project_name: str, layer_number: int, svg_path: str, img_recoat_path: 
                 "after_melting_image": "",
                 "svg_image": "", "id": ""}
 
-    # add_zeros = '0' * (5 - len(str(layer_number)))
-    # add_zeros2 = '0' * (5 - len(str(layer_number - 1)))
-
-    # PATH PATH PATH
-    # svg_path = f"{project_name}/../svg/{add_zeros}{layer_number}.svg"  # TODO: create normal svg filename
-    # img_recoat_path = f'{project_name}/{add_zeros}{layer_number}-recoat.jpg'
-    # img_scan_path = f'{project_name}/{add_zeros}{layer_number}-scan.jpg'
-    # img_recoat_prev_path = f'{project_name}/{add_zeros2}{layer_number - 1}-recoat.jpg'
+    t = time.time()
 
     img = cv2.imread(img_recoat_path)
     img_bytes = cv2.imencode('.jpg', img)[1].tobytes()
 
     after_melting_img = cv2.imread(img_scan_path)
-    after_metling_img_flipped = np.rot90(np.fliplr(after_melting_img), k=3)
+    after_melting_img_processed = processing(after_melting_img)
+    after_metling_img_flipped = np.rot90(np.fliplr(after_melting_img_processed), k=3)
     after_metling_img_flipped_bytes = cv2.imencode('.jpg', after_metling_img_flipped)[1].tobytes()
-    after_melting_img_bytes = cv2.imencode('.jpg', after_melting_img)[1].tobytes()
+    # after_melting_img_bytes = cv2.imencode('.jpg', after_melting_img)[1].tobytes()
 
     prev_img = cv2.imread(img_recoat_prev_path)
     prev_img_bytes = cv2.imencode('.jpg', prev_img)[1].tobytes()
 
-    svg_array = get_svg_data(svg_path)
+    print('IMAGES PROCESSED', time.time() - t)
+    t = time.time()
+
+    svg_array, svg_png_bytes = get_svg_data(svg_path)
     svg_bytes = svg_array.tobytes()
 
-    result = celery_client.send_task('tasks.evaluate_layer',
-                                     (img_bytes, prev_img_bytes, svg_bytes, svg_array.shape))
+    print('SVG DATA GOT', time.time() - t)
+
+    t = time.time()
+
+    task = celery_client.send_task('tasks.evaluate_layer',
+                                   (img_bytes, prev_img_bytes, svg_bytes, svg_array.shape))
 
     try:
-        result = result.get()
+        result = task.get()
     except Exception as e:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={"message": f"Oops! Celery did something: {e}"},
         )
 
-    # 'alerts': [{'value': 0.0, 'info': ''}, {'value': 1, 'info': '', 'error_type': 'WIPER_DEFECTED'}]
+    print("DEFECTS COLLECTED", time.time() - t)
+
+    t = time.time()
     img_bytes = result['visualizations'][0]
-    img_viz_array = np.frombuffer(img_bytes, np.uint8)  # .reshape(svg_array.shape)
+    img_viz_array = np.frombuffer(img_bytes, np.uint8)
     img_viz = cv2.imdecode(img_viz_array, cv2.IMREAD_COLOR)
 
     img_flipped = np.rot90(np.fliplr(img_viz), k=3)
     img_flipped_bytes = cv2.imencode('.jpg', img_flipped)[1].tobytes()
-
-    # img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    # cv2.imwrite('../output.jpg', img)
 
     # SEND WORK TO back
     warns = []
@@ -105,13 +102,18 @@ def start(project_name: str, layer_number: int, svg_path: str, img_recoat_path: 
 
     print(warns)
 
-    svg_bytes = open(svg_path, mode='rb').read()
+    print("WARNINGS PROCESSED", time.time() - t)
 
-    layer_id = setup_layer(layer_number, CURRENT_PRINTER_DETAILS['PROJECT_ID'], warns, main_client)
+    t = time.time()
+
+    # svg_bytes = open(svg_path, mode='rb').read()
+    # svg_png_bytes = cairosvg.svg2png(bytestring=svg_bytes, output_width=800, output_height=800)
+
+    layer_id = setup_layer(layer_number, CURRENT_PRINTER_DETAILS['PROJECT_ID'], warns)
     response = add_photos_to_layer(layer_id, img_flipped_bytes, after_metling_img_flipped_bytes,
-                                   svg_bytes, main_client)
+                                   svg_png_bytes)
 
-    print('image processed', response.text)
+    print('image processed CARIO SVG + SEND', time.time() - t, response.text)
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,

@@ -1,3 +1,7 @@
+import torch
+from PIL import Image
+from torchvision import transforms
+import torch.nn.functional as F
 from celery import Celery
 import numpy as np
 from utils import processing, get_defects_info
@@ -14,11 +18,51 @@ app.control.time_limit('tasks.evaluate_layer',
 
 # Load a model for segmentation
 # model = YOLO('models/yolo_model_segm.pt')
-model = YOLO("models/yolo_model_segm.engine", task="segment")
+yolo_model = YOLO("models/yolo_model_segm.engine", task="segment")
+lazer_model = torch.jit.load('models/model_scripted.pt')
+lazer_model.eval()
 
 # open dump model for classification wiper
 with open('models/model_logisticRegression.pkl', 'rb') as f:
     classifier = pickle.load(f)
+
+
+def detect_lazer(img: np.array, prev_img: np.array, svg: np.array) -> dict:
+    """
+    detect lazer on recoat stage (no need to run other algorithms in terms of polluting image)
+    :param img: current layer image recoat
+    :param prev_img: previous layer image reocat
+    :param svg: svg matrix (bool mask) of current layer
+    :return: dict with key alerts for information about issues (probability)
+    """
+
+    img = Image.fromarray(img).convert('RGB')
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    transform = transforms.Compose([
+        transforms.Resize((256, 256)),
+        transforms.ToTensor()
+    ])
+
+    transformed_image = transform(img).unsqueeze(0).to(device)
+    lazer_model.eval()
+    raw_output = lazer_model(transformed_image)
+
+    probabilities = F.softmax(raw_output, dim=1)
+    error_prob = probabilities[0][0].item()
+
+    alerts = []
+    if error_prob > 0.5:
+        alerts.append({
+            'value': error_prob,
+            'info': 'Lazer polluted photo',
+            'error_type': 'LAZER_INSTANCE'
+        })
+
+    return {
+        'visualizations': None,
+        'alerts': alerts
+    }
 
 
 def classify_metal_absence(img: np.array, prev_img: np.array, svg: np.array) -> dict:
@@ -62,7 +106,7 @@ def detect_defected_wiper(img: np.array, prev_img: np.array, svg: np.array) -> d
     for information about issues (metric - error rate)
     """
 
-    results = model.predict([img], imgsz=1024)
+    results = yolo_model.predict([img], imgsz=1024)
     # results = model(img)
     error_ratio, annotated_frame = get_defects_info(results, svg, img)
     np_annotated_frame = np.array(annotated_frame.convert('RGB'))
@@ -109,7 +153,7 @@ def evaluate_layer(recoat_img: bytes, previous_recoat_img: bytes, svg: bytes, sh
     previous_img_preprocessed = processing(previous_recoat_img)
 
     # modules for detection defects
-    inference_funcs = [detect_defected_wiper, classify_metal_absence]
+    inference_funcs = [detect_lazer, classify_metal_absence, detect_defected_wiper]
 
     server_response = {'visualizations': [],
                        'alerts': []}
@@ -126,5 +170,8 @@ def evaluate_layer(recoat_img: bytes, previous_recoat_img: bytes, svg: bytes, sh
             )
         if func_response['alerts'] is not None:
             server_response['alerts'].extend(func_response['alerts'])
+        elif func_response['alerts'][0]['error_type'] == 'LAZER_INSTANCE':
+            # in case of lazer on photo we are not able to launch other algorithms for defect spotting
+            break
 
     return server_response

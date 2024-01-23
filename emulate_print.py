@@ -20,13 +20,14 @@ def create_request(layer_count, project_name):
                            'img_recoat_prev_path': img_recoat_prev_path,
                            'layer_number': layer_count})
     if res.status_code >= 300:
-        print(res, res.text, res.elapsed.total_seconds())
+        print(res.text)
+    print(res, res.elapsed.total_seconds())
 
 
 ALL_LAYERS = 1
 URL = 'http://0.0.0.0:9080/start_processing/'
-# PRINTER_DIR = '../../sirius/'
-PRINTER_DIR = '../all_printers/'
+PRINTER_DIR = '../../sirius/'
+# PRINTER_DIR = '../all_printers/'
 
 for layer_number in tqdm(range(147, 150)):
     project_name = PRINTER_DIR + '/print4/2024-01-04 15%3A28%3A26'
