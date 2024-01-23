@@ -15,10 +15,10 @@ from utils import get_svg_data, processing
 config = configparser.ConfigParser()
 config.read("settings.ini")
 
-celery_client = Celery('tasks', broker='redis://0.0.0.0:8010',
-                       backend='redis://0.0.0.0:8010')
-# celery_client = Celery('tasks', broker='redis://46.45.33.28:22080',
-#                        backend='redis://46.45.33.28:22080')
+# celery_client = Celery('tasks', broker='redis://0.0.0.0:8010',
+#                        backend='redis://0.0.0.0:8010')
+celery_client = Celery('tasks', broker='redis://46.45.33.28:22080',
+                       backend='redis://46.45.33.28:22080')
 
 CURRENT_PRINTER_DETAILS = {
     'PRINTER_UID': '213213',
@@ -66,7 +66,10 @@ def start(project_name: str, layer_number: int, svg_path: str, img_recoat_path: 
     t = time.time()
 
     svg_array, svg_png_bytes = get_svg_data(svg_path)
+    svg_array = svg_array.astype('uint8')
     svg_bytes = cv2.imencode('.jpg', svg_array)[1].tobytes()
+
+    print('SHAPES', img.shape, svg_array.shape)
 
     print('SVG DATA GOT', time.time() - t)
 

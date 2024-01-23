@@ -26,8 +26,8 @@ def create_request(layer_count, project_name):
 
 ALL_LAYERS = 1
 URL = 'http://0.0.0.0:9080/start_processing/'
-PRINTER_DIR = '../../sirius/'
-# PRINTER_DIR = '../all_printers/'
+# PRINTER_DIR = '../../sirius/'
+PRINTER_DIR = '../all_printers/'
 
 for layer_number in tqdm(range(147, 150)):
     project_name = PRINTER_DIR + '/print4/2024-01-04 15%3A28%3A26'

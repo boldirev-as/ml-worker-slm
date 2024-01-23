@@ -125,7 +125,7 @@ def detect_defected_wiper(img: np.array, prev_img: np.array, svg: np.array) -> d
 
 
 @app.task
-def evaluate_layer(recoat_img: bytes, previous_recoat_img: bytes, svg: bytes, shape: (int, int)) -> dict:
+def evaluate_layer(recoat_img: bytes, previous_recoat_img: bytes, svg: bytes) -> dict:
     """
     celery task for searching deffects in one layer, using svg file, scan and recoat images
 
@@ -144,15 +144,14 @@ def evaluate_layer(recoat_img: bytes, previous_recoat_img: bytes, svg: bytes, sh
     nparr = np.frombuffer(previous_recoat_img, np.uint8)
     previous_recoat_img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-    svg = np.frombuffer(svg, bool)
-    svg = svg.reshape(shape)
-
-    # Preprocess images to grayscale
-    # img_preprocessed = processing(recoat_img)
-    # previous_img_preprocessed = processing(previous_recoat_img)
+    # decode svg layer to bin mask
+    nparr = np.frombuffer(svg, np.uint8)
+    svg = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    svg = cv2.resize(svg, (1024, 1024))
+    svg = svg[:, :, 0].reshape((1024, 1024)).astype(bool)
 
     # modules for detection defects
-    inference_funcs = [detect_lazer, classify_metal_absence, detect_defected_wiper]
+    inference_funcs = [classify_metal_absence, detect_defected_wiper]
 
     server_response = {'visualizations': [],
                        'alerts': []}
