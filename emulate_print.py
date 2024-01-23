@@ -2,8 +2,9 @@ import requests
 from tqdm import tqdm
 
 ALL_LAYERS = 1
+URL = 'http://0.0.0.0:9080/start_processing/'
 
-for layer_number in tqdm(range(100, 150)):
+for layer_number in tqdm(range(147, 150)):
 
     add_zeros = '0' * (5 - len(str(layer_number)))
     add_zeros2 = '0' * (5 - len(str(layer_number - 1)))
@@ -14,7 +15,7 @@ for layer_number in tqdm(range(100, 150)):
     img_scan_path = f'{project_name}/{add_zeros}{layer_number}-scan.jpg'
     img_recoat_prev_path = f'{project_name}/{add_zeros2}{layer_number - 1}-recoat.jpg'
 
-    res = requests.get('http://0.0.0.0:9080/start_processing/',
+    res = requests.get(URL,
                        params={
                            'project_name': project_name,
                            'svg_path': svg_path,
@@ -36,7 +37,7 @@ for layer_number in tqdm(range(2017, 2020)):
     img_scan_path = f'{project_name}/{add_zeros}{layer_number}-scan.jpg'
     img_recoat_prev_path = f'{project_name}/{add_zeros2}{layer_number - 1}-recoat.jpg'
 
-    res = requests.get('http://0.0.0.0:9080/start_processing/',
+    res = requests.get(URL,
                        params={
                            'project_name': project_name,
                            'svg_path': svg_path,
@@ -48,7 +49,7 @@ for layer_number in tqdm(range(2017, 2020)):
     if res.status_code >= 300:
         print(res, res.text, res.elapsed.total_seconds())
 
-for layer_number in tqdm(range(1000, 1050)):
+for layer_number in tqdm(range(1047, 1050)):
 
     add_zeros = '0' * (5 - len(str(layer_number)))
     add_zeros2 = '0' * (5 - len(str(layer_number - 1)))
@@ -59,7 +60,7 @@ for layer_number in tqdm(range(1000, 1050)):
     img_scan_path = f'{project_name}/{add_zeros}{layer_number}-scan.jpg'
     img_recoat_prev_path = f'{project_name}/{add_zeros2}{layer_number - 1}-recoat.jpg'
 
-    res = requests.get('http://0.0.0.0:9080/start_processing/',
+    res = requests.get(URL,
                        params={
                            'project_name': project_name,
                            'svg_path': svg_path,
@@ -82,7 +83,7 @@ for layer_number in tqdm(range(1708, 1710)):
     img_scan_path = f'{project_name}/{add_zeros}{layer_number}-scan.jpg'
     img_recoat_prev_path = f'{project_name}/{add_zeros2}{layer_number - 1}-recoat.jpg'
 
-    res = requests.get('http://0.0.0.0:9080/start_processing/',
+    res = requests.get(URL,
                        params={
                            'project_name': project_name,
                            'svg_path': svg_path,
@@ -94,7 +95,7 @@ for layer_number in tqdm(range(1708, 1710)):
     if res.status_code >= 300:
         print(res, res.text, res.elapsed.total_seconds())
 
-for layer_number in tqdm(range(1000, 1050)):
+for layer_number in tqdm(range(1047, 1050)):
     add_zeros = '0' * (5 - len(str(layer_number)))
     add_zeros2 = '0' * (5 - len(str(layer_number - 1)))
 
@@ -104,7 +105,7 @@ for layer_number in tqdm(range(1000, 1050)):
     img_scan_path = f'{project_name}/{add_zeros}{layer_number}-scan.jpg'
     img_recoat_prev_path = f'{project_name}/{add_zeros2}{layer_number - 1}-recoat.jpg'
 
-    res = requests.get('http://0.0.0.0:9080/start_processing/',
+    res = requests.get(URL,
                        params={
                            'project_name': project_name,
                            'svg_path': svg_path,
