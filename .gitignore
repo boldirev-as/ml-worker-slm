@@ -7,3 +7,5 @@
 /ml-server/models/
 /ml-server/tmp.py
 /test_celery.py
+/exp/tmp2.py
+/exp/

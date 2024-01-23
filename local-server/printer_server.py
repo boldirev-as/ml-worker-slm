@@ -4,12 +4,13 @@ import cv2
 from PIL import Image
 from cairosvg import svg2png
 from celery import Celery
-from fastapi import FastAPI
+from fastapi import FastAPI, status
+from fastapi.responses import JSONResponse
 import configparser
 
 import numpy as np
 from httpx import Client
-from starlette.responses import JSONResponse
+# from starlette.responses import JSONResponse
 
 from requests_for_backend import setup_layer, add_photos_to_layer, create_new_project
 from utils import get_svg_data
@@ -17,8 +18,10 @@ from utils import get_svg_data
 config = configparser.ConfigParser()
 config.read("settings.ini")
 
-celery_client = Celery('tasks', broker='redis://0.0.0.0:8010',
-                       backend='redis://0.0.0.0:8010')
+# celery_client = Celery('tasks', broker='redis://0.0.0.0:8010',
+#                        backend='redis://0.0.0.0:8010')
+celery_client = Celery('tasks', broker='redis://46.45.33.28:22080',
+                       backend='redis://46.45.33.28:22080')
 
 main_client = Client()
 CURRENT_PRINTER_DETAILS = {
@@ -76,14 +79,16 @@ def start(project_name: str, layer_number: int, svg_path: str, img_recoat_path: 
         result = result.get()
     except Exception as e:
         return JSONResponse(
-            status_code=404,
+            status_code=status.HTTP_404_NOT_FOUND,
             content={"message": f"Oops! Celery did something: {e}"},
         )
 
     # 'alerts': [{'value': 0.0, 'info': ''}, {'value': 1, 'info': '', 'error_type': 'WIPER_DEFECTED'}]
     img_bytes = result['visualizations'][0]
-    img_viz_array = np.frombuffer(img_bytes, np.uint8)
-    img_flipped = np.rot90(np.fliplr(img_viz_array), k=3)
+    img_viz_array = np.frombuffer(img_bytes, np.uint8)  # .reshape(svg_array.shape)
+    img_viz = cv2.imdecode(img_viz_array, cv2.IMREAD_COLOR)
+
+    img_flipped = np.rot90(np.fliplr(img_viz), k=3)
     img_flipped_bytes = cv2.imencode('.jpg', img_flipped)[1].tobytes()
 
     # img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -108,4 +113,7 @@ def start(project_name: str, layer_number: int, svg_path: str, img_recoat_path: 
 
     print('image processed', response.text)
 
-    return response.json()
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=response.json(),
+    )
