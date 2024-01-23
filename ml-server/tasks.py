@@ -4,7 +4,7 @@ from utils import processing, get_defects_info
 from ultralytics import YOLO
 import cv2
 import pickle
-from skimage.metrics import structural_similarity as peak_signal_noise_ratio
+from skimage.metrics import peak_signal_noise_ratio
 
 app = Celery('tasks', broker='redis://redis-stack-server:6379', backend='redis://redis-stack-server:6379')
 # app = Celery('tasks', broker='redis://46.45.33.28:22080', backend='redis://46.45.33.28:22080')

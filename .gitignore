@@ -5,5 +5,5 @@
 /ml-server/models/model_logisticRegression.pkl
 /settings.ini
 /ml-server/models/
-/tmp.py
+/ml-server/tmp.py
 /test_celery.py

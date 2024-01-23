@@ -1,4 +1,8 @@
+from io import BytesIO
+
 import cv2
+from PIL import Image
+from cairosvg import svg2png
 from celery import Celery
 from fastapi import FastAPI
 import configparser
@@ -13,8 +17,8 @@ from utils import get_svg_data
 config = configparser.ConfigParser()
 config.read("settings.ini")
 
-celery_client = Celery('tasks', broker='redis://46.45.33.28:22080',
-                       backend='redis://46.45.33.28:22080')
+celery_client = Celery('tasks', broker='redis://0.0.0.0:8010',
+                       backend='redis://0.0.0.0:8010')
 
 main_client = Client()
 CURRENT_PRINTER_DETAILS = {
@@ -31,7 +35,8 @@ app = FastAPI()
 
 
 @app.get("/start_processing/")
-def start(project_name: str,  layer_number: int, svg_path: str, img_recoat_path: str, img_scan_path: str, img_recoat_prev_path: str):
+def start(project_name: str, layer_number: int, svg_path: str, img_recoat_path: str, img_scan_path: str,
+          img_recoat_prev_path: str):
     if layer_number == 1:
         CURRENT_PRINTER_DETAILS['PROJECT_ID'] = create_new_project(main_client, 3000)
 
@@ -54,6 +59,8 @@ def start(project_name: str,  layer_number: int, svg_path: str, img_recoat_path:
     img_bytes = cv2.imencode('.jpg', img)[1].tobytes()
 
     after_melting_img = cv2.imread(img_scan_path)
+    after_metling_img_flipped = np.rot90(np.fliplr(after_melting_img), k=3)
+    after_metling_img_flipped_bytes = cv2.imencode('.jpg', after_metling_img_flipped)[1].tobytes()
     after_melting_img_bytes = cv2.imencode('.jpg', after_melting_img)[1].tobytes()
 
     prev_img = cv2.imread(img_recoat_prev_path)
@@ -75,9 +82,12 @@ def start(project_name: str,  layer_number: int, svg_path: str, img_recoat_path:
 
     # 'alerts': [{'value': 0.0, 'info': ''}, {'value': 1, 'info': '', 'error_type': 'WIPER_DEFECTED'}]
     img_bytes = result['visualizations'][0]
-    nparr = np.frombuffer(img_bytes, np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    cv2.imwrite('../output.jpg', img)
+    img_viz_array = np.frombuffer(img_bytes, np.uint8)
+    img_flipped = np.rot90(np.fliplr(img_viz_array), k=3)
+    img_flipped_bytes = cv2.imencode('.jpg', img_flipped)[1].tobytes()
+
+    # img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    # cv2.imwrite('../output.jpg', img)
 
     # SEND WORK TO back
     warns = []
@@ -93,7 +103,8 @@ def start(project_name: str,  layer_number: int, svg_path: str, img_recoat_path:
     svg_bytes = open(svg_path, mode='rb').read()
 
     layer_id = setup_layer(layer_number, CURRENT_PRINTER_DETAILS['PROJECT_ID'], warns, main_client)
-    response = add_photos_to_layer(layer_id, img_bytes, after_melting_img_bytes, svg_bytes, main_client)
+    response = add_photos_to_layer(layer_id, img_flipped_bytes, after_metling_img_flipped_bytes,
+                                   svg_bytes, main_client)
 
     print('image processed', response.text)
 
