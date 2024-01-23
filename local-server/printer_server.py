@@ -49,6 +49,7 @@ def start(project_name: str, layer_number: int, svg_path: str, img_recoat_path: 
     t = time.time()
 
     img = cv2.imread(img_recoat_path)
+    img = processing(img)
     img_bytes = cv2.imencode('.jpg', img)[1].tobytes()
 
     after_melting_img = cv2.imread(img_scan_path)
@@ -58,13 +59,14 @@ def start(project_name: str, layer_number: int, svg_path: str, img_recoat_path: 
     # after_melting_img_bytes = cv2.imencode('.jpg', after_melting_img)[1].tobytes()
 
     prev_img = cv2.imread(img_recoat_prev_path)
+    prev_img = processing(prev_img)
     prev_img_bytes = cv2.imencode('.jpg', prev_img)[1].tobytes()
 
     print('IMAGES PROCESSED', time.time() - t)
     t = time.time()
 
     svg_array, svg_png_bytes = get_svg_data(svg_path)
-    svg_bytes = svg_array.tobytes()
+    svg_bytes = cv2.imencode('.jpg', svg_array)[1].tobytes()
 
     print('SVG DATA GOT', time.time() - t)
 

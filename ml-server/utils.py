@@ -1,29 +1,7 @@
-import io
-
-import cairosvg
 import cv2
 from PIL import Image
-from bs4 import BeautifulSoup
 from scipy.special import erf
 import numpy as np
-import matplotlib.pyplot as plt
-
-
-def get_svg_data(svg_path):
-    with open(svg_path) as svg_file:
-        svg_content = svg_file.read()
-    soup = BeautifulSoup(svg_content, 'xml')
-    g_element = soup.find('g')
-    if g_element:
-        g_element.decompose()
-    return svg_to_numpy(str(soup)).mean(axis=2) != 0
-
-
-def svg_to_numpy(svg_content):
-    png_data = cairosvg.svg2png(bytestring=svg_content.encode('utf-8'), output_width=1024, output_height=1024)
-    image = Image.open(io.BytesIO(png_data))
-    svg_numpy_array = np.rot90(np.fliplr(np.array(image)), k=3)
-    return svg_numpy_array
 
 
 def get_error_image(svg_data, defects_data, intersection_data, show=False):
@@ -31,7 +9,6 @@ def get_error_image(svg_data, defects_data, intersection_data, show=False):
     error_image[svg_data != 0] = [0, 255, 0]  # RGB -> BGR
     error_image[defects_data != 0] = [0, 255, 255]
     error_image[intersection_data != 0] = [0, 0, 255]
-    if show: plt.imshow(error_image)
     return error_image
 
 

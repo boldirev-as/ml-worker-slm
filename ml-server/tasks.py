@@ -107,7 +107,6 @@ def detect_defected_wiper(img: np.array, prev_img: np.array, svg: np.array) -> d
     """
 
     results = yolo_model.predict([img], imgsz=1024)
-    # results = model(img)
     error_ratio, annotated_frame = get_defects_info(results, svg, img)
     np_annotated_frame = np.array(annotated_frame.convert('RGB'))
 
@@ -145,12 +144,12 @@ def evaluate_layer(recoat_img: bytes, previous_recoat_img: bytes, svg: bytes, sh
     nparr = np.frombuffer(previous_recoat_img, np.uint8)
     previous_recoat_img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-    svg = np.frombuffer(svg, dtype=bool)
+    svg = np.frombuffer(svg, bool)
     svg = svg.reshape(shape)
 
     # Preprocess images to grayscale
-    img_preprocessed = processing(recoat_img)
-    previous_img_preprocessed = processing(previous_recoat_img)
+    # img_preprocessed = processing(recoat_img)
+    # previous_img_preprocessed = processing(previous_recoat_img)
 
     # modules for detection defects
     inference_funcs = [detect_lazer, classify_metal_absence, detect_defected_wiper]
@@ -159,7 +158,7 @@ def evaluate_layer(recoat_img: bytes, previous_recoat_img: bytes, svg: bytes, sh
                        'alerts': []}
     for inference_func in inference_funcs:
         # launch new module
-        func_response = inference_func(img_preprocessed.copy(), previous_img_preprocessed.copy(), svg.copy())
+        func_response = inference_func(recoat_img.copy(), previous_recoat_img.copy(), svg.copy())
 
         # if there is something wrong, save to server response
         if func_response['visualizations'] is not None:
