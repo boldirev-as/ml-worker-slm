@@ -40,7 +40,7 @@ def start(project_name: str, layer_number: int, svg_path: str, img_recoat_path: 
     if layer_number == 1:
         CURRENT_PRINTER_DETAILS['PROJECT_ID'] = create_new_project(3000)
 
-    if layer_number < 3:
+    if layer_number < 1:
         return {"warns": [], "project_id": CURRENT_PRINTER_DETAILS['PROJECT_ID'], "order": layer_number,
                 "printer_uid": "", "before_melting_image": "",
                 "after_melting_image": "",

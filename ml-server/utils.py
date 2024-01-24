@@ -34,9 +34,8 @@ def get_defects_info(results, svg_data, image_data, show=False):
 
 
 def cut_image_by_mask(img, mask):
+    mask = cv2.resize(mask.astype('uint8'), img.shape)
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    mask = np.zeros_like(mask, dtype=np.uint8)
     cv2.drawContours(mask, contours, -1, 255, thickness=cv2.FILLED)
     dilated_mask = cv2.dilate(mask, np.ones((14, 14), dtype=np.uint8))
     result = cv2.bitwise_and(img, img, mask=dilated_mask)

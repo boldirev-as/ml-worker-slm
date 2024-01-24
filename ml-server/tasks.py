@@ -87,9 +87,10 @@ def classify_metal_absence(img: np.array, prev_img: np.array, svg: np.array) -> 
     alerts = []
     if similarity_metric > 0.5:
         alerts.append({
-            'value': similarity_metric,
+            'value': float(similarity_metric),
             'info': 'There is no enough metal in SLM container',
-            'error_type': 'METAL_ABSENCE'
+            'error_type': 'METAL_ABSENCE',
+            'recommendation': 'stop'
         })
 
     return {
@@ -118,7 +119,8 @@ def detect_defected_wiper(img: np.array, prev_img: np.array, svg: np.array) -> d
         alerts.append({
             'value': error_ratio,
             'info': 'Wiper defected and can affect the result of SLM',
-            'error_type': 'WIPER_DEFECTED'
+            'error_type': 'WIPER_DEFECTED',
+            'recommendation': 'stop' if error_ratio > 0 else 'ignore'
         })
 
     return {
@@ -170,8 +172,9 @@ def evaluate_layer(recoat_img: bytes, previous_recoat_img: bytes, svg: bytes) ->
             )
         if func_response['alerts'] is not None:
             server_response['alerts'].extend(func_response['alerts'])
-        elif func_response['alerts'][0]['error_type'] == 'LAZER_INSTANCE':
-            # in case of lazer on photo we are not able to launch other algorithms for defect spotting
+            server_response['recommendation'] = func_response['recommendation']
+            # in case of lazer (or other stuff) on photo we are not able to launch
+            # other algorithms for defect spotting
             break
 
     return server_response
