@@ -1,7 +1,7 @@
-import torch
-from PIL import Image
-from torchvision import transforms
-import torch.nn.functional as F
+# import torch
+# from PIL import Image
+# from torchvision import transforms
+# import torch.nn.functional as F
 from celery import Celery
 import numpy as np
 from utils import get_defects_info, cut_image_by_mask
@@ -19,50 +19,50 @@ app.control.time_limit('tasks.evaluate_layer',
 # Load a model for segmentation
 # model = YOLO('models/yolo_model_segm.pt')
 yolo_model = YOLO("models/yolo_model_segm.engine", task="segment")
-lazer_model = torch.jit.load('models/model_scripted.pt')
-lazer_model.eval()
+# lazer_model = torch.jit.load('models/model_scripted.pt')
+# lazer_model.eval()
 
 # open dump model for classification wiper
 with open('models\model_regression_cut.pkl', 'rb') as f:  # open dump model
     classifier = pickle.load(f)
 
 
-def detect_lazer(img: np.array, prev_img: np.array, svg: np.array) -> dict:
-    """
-    detect lazer on recoat stage (no need to run other algorithms in terms of polluting image)
-    :param img: current layer image recoat
-    :param prev_img: previous layer image reocat
-    :param svg: svg matrix (bool mask) of current layer
-    :return: dict with key alerts for information about issues (probability)
-    """
-
-    img = Image.fromarray(img).convert('RGB')
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    transform = transforms.Compose([
-        transforms.Resize((256, 256)),
-        transforms.ToTensor()
-    ])
-
-    transformed_image = transform(img).unsqueeze(0).to(device)
-    lazer_model.eval()
-    raw_output = lazer_model(transformed_image)
-
-    probabilities = F.softmax(raw_output, dim=1)
-    error_prob = probabilities[0][0].item()
-
-    alerts = []
-    if error_prob > 0.5:
-        alerts.append({
-            'value': error_prob,
-            'info': 'Lazer polluted photo',
-            'error_type': 'LAZER_INSTANCE'
-        })
-
-    return {
-        'visualizations': None,
-        'alerts': alerts
-    }
+# def detect_lazer(img: np.array, prev_img: np.array, svg: np.array) -> dict:
+#     """
+#     detect lazer on recoat stage (no need to run other algorithms in terms of polluting image)
+#     :param img: current layer image recoat
+#     :param prev_img: previous layer image reocat
+#     :param svg: svg matrix (bool mask) of current layer
+#     :return: dict with key alerts for information about issues (probability)
+#     """
+#
+#     img = Image.fromarray(img).convert('RGB')
+#
+#     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+#     transform = transforms.Compose([
+#         transforms.Resize((256, 256)),
+#         transforms.ToTensor()
+#     ])
+#
+#     transformed_image = transform(img).unsqueeze(0).to(device)
+#     lazer_model.eval()
+#     raw_output = lazer_model(transformed_image)
+#
+#     probabilities = F.softmax(raw_output, dim=1)
+#     error_prob = probabilities[0][0].item()
+#
+#     alerts = []
+#     if error_prob > 0.5:
+#         alerts.append({
+#             'value': error_prob,
+#             'info': 'Lazer polluted photo',
+#             'error_type': 'LAZER_INSTANCE'
+#         })
+#
+#     return {
+#         'visualizations': None,
+#         'alerts': alerts
+#     }
 
 
 def classify_metal_absence(img: np.array, prev_img: np.array, svg: np.array) -> dict:
@@ -135,7 +135,6 @@ def evaluate_layer(recoat_img: bytes, previous_recoat_img: bytes, svg: bytes) ->
     :param recoat_img: image from recoat stage in current layer (cv2 bytes)
     :param previous_recoat_img: image from recoat stage in previous layer (cv2 bytes)
     :param svg: svg file for current layer (np mask bytes)
-    :param shape: shape of input images (tuple height and width)
     :return: dict file with images for visualization defects and
     a list with alerts + info
     """
