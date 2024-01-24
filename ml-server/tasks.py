@@ -159,7 +159,7 @@ def evaluate_layer(recoat_img: bytes, previous_recoat_img: bytes, svg: bytes) ->
 
     # modules for detection defects
     inference_funcs = [
-        (detect_lazer, {'use_preprocessed': False, 'add_to_response': False}),
+        # (detect_lazer, {'use_preprocessed': False, 'add_to_response': False}),
         (classify_metal_absence, {}),
         (detect_defected_wiper, {})
     ]

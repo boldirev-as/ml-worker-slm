@@ -13,7 +13,7 @@ def create_request(layer_count_from_start, project_name, cur_layer_number):
 
     res = requests.get(URL,
                        params={
-                           'project_name': project_name,
+                           'project_name': 'Деталь 76747',
                            'svg_path': svg_path,
                            'img_recoat_path': img_recoat_path,
                            'img_scan_path': img_scan_path,
@@ -34,6 +34,12 @@ for layer_number in tqdm(range(200, 250)):
     project_name = PRINTER_DIR + '/print4/2024-01-04 15%3A28%3A26'
     create_request(ALL_LAYERS, project_name, layer_number)
     ALL_LAYERS += 1
+
+# LAZER
+# for layer_number in tqdm(range(773, 790)):
+#     project_name = PRINTER_DIR + '/print2/2023-12-06 18%3A42%3A35'
+#     create_request(ALL_LAYERS, project_name, layer_number)
+#     ALL_LAYERS += 1
 
 # METAL ABSENCE
 for layer_number in tqdm(range(1967, 1968)):

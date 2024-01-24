@@ -12,3 +12,5 @@ ultralytics
 beautifulsoup4
 Redis
 nvidia-tensorrt
+onnxruntime
+scipy
