@@ -92,10 +92,10 @@ def start(project_name: str, layer_number: int, svg_path: str, img_recoat_path: 
         img_bytes = result['visualizations'][0]
         img_viz_array = np.frombuffer(img_bytes, np.uint8)
         img_viz = cv2.imdecode(img_viz_array, cv2.IMREAD_COLOR)
-        img_flipped = np.rot90(np.fliplr(img_viz), k=3)
     else:
-        img_flipped = img
+        img_viz = img
 
+    img_flipped = np.rot90(np.fliplr(img_viz), k=3)
     img_flipped_bytes = cv2.imencode('.jpg', img_flipped)[1].tobytes()
 
     # SEND WORK TO back

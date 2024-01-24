@@ -92,7 +92,7 @@ def classify_metal_absence(img: np.array, prev_img: np.array, svg: np.array) -> 
             'info': 'There is no enough metal in SLM container',
             'error_type': 'METAL_ABSENCE'
         })
-        recommendation = 'stop'
+        recommendation = 'metal_absence_stop'
 
     return {
         'visualizations': None,
@@ -124,7 +124,7 @@ def detect_defected_wiper(img: np.array, prev_img: np.array, svg: np.array) -> d
             'info': 'Wiper defected and can affect the result of SLM',
             'error_type': 'WIPER_DEFECTED'
         })
-        recommendation = 'stop' if error_ratio > 0 else 'ignore'
+        recommendation = 'reslice_stop' if error_ratio > 0 else 'ignore'
 
     return {
         'visualizations': np_annotated_frame,
@@ -161,9 +161,11 @@ def evaluate_layer(recoat_img: bytes, previous_recoat_img: bytes, svg: bytes) ->
     # modules for detection defects
     inference_funcs = [classify_metal_absence, detect_defected_wiper]
 
-    server_response = {'visualizations': [],
-                       'alerts': [],
-                       'recommendation': ''}
+    server_response = {
+        'visualizations': [],
+        'alerts': [],
+        'recommendation': ''
+    }
     for inference_func in inference_funcs:
         # launch new module
         func_response = inference_func(recoat_img.copy(), previous_recoat_img.copy(), svg.copy())
