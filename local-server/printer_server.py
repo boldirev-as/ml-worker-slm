@@ -76,7 +76,7 @@ def start(project_name: str, layer_number: int, svg_path: str, img_recoat_path: 
     t = time.time()
 
     task = celery_client.send_task('tasks.evaluate_layer',
-                                   (img_bytes, prev_img_bytes, svg_bytes, svg_array.shape))
+                                   (img_bytes, prev_img_bytes, svg_bytes))
 
     try:
         result = task.get()

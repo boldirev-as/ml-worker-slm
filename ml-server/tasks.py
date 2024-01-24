@@ -4,7 +4,7 @@ from torchvision import transforms
 import torch.nn.functional as F
 from celery import Celery
 import numpy as np
-from utils import processing, get_defects_info
+from utils import get_defects_info
 from ultralytics import YOLO
 import cv2
 import pickle
@@ -23,7 +23,7 @@ lazer_model = torch.jit.load('models/model_scripted.pt')
 lazer_model.eval()
 
 # open dump model for classification wiper
-with open('models/model_logisticRegression.pkl', 'rb') as f:
+with open('models\model_regression_cut.pkl', 'rb') as f:  # open dump model
     classifier = pickle.load(f)
 
 
@@ -78,8 +78,11 @@ def classify_metal_absence(img: np.array, prev_img: np.array, svg: np.array) -> 
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     prev_img = cv2.cvtColor(prev_img, cv2.COLOR_BGR2GRAY)
 
-    comparing = peak_signal_noise_ratio(img, prev_img)
-    similarity_metric = classifier.predict_proba([[comparing]])[0][0]
+    cut_img = cv2.bitwise_and(img, img, mask=svg)
+    cut_prev_img = cv2.bitwise_and(prev_img, prev_img, mask=svg)
+
+    comparing = peak_signal_noise_ratio(cut_img, cut_prev_img)
+    similarity_metric = classifier.predict([[comparing]])[0]
 
     alerts = []
     if similarity_metric > 0.5:
