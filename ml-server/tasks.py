@@ -89,13 +89,13 @@ def classify_metal_absence(img: np.array, prev_img: np.array, svg: np.array) -> 
         alerts.append({
             'value': float(similarity_metric),
             'info': 'There is no enough metal in SLM container',
-            'error_type': 'METAL_ABSENCE',
-            'recommendation': 'stop'
+            'error_type': 'METAL_ABSENCE'
         })
 
     return {
         'visualizations': None,
-        'alerts': alerts
+        'alerts': alerts,
+        'recommendation': 'stop'
     }
 
 
@@ -119,13 +119,13 @@ def detect_defected_wiper(img: np.array, prev_img: np.array, svg: np.array) -> d
         alerts.append({
             'value': error_ratio,
             'info': 'Wiper defected and can affect the result of SLM',
-            'error_type': 'WIPER_DEFECTED',
-            'recommendation': 'stop' if error_ratio > 0 else 'ignore'
+            'error_type': 'WIPER_DEFECTED'
         })
 
     return {
         'visualizations': np_annotated_frame,
-        'alerts': alerts
+        'alerts': alerts,
+        'recommendation': 'stop' if error_ratio > 0 else 'ignore'
     }
 
 
