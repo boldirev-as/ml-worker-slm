@@ -37,7 +37,8 @@ app = FastAPI()
 def start(project_name: str, layer_number: int, svg_path: str, img_recoat_path: str, img_scan_path: str,
           img_recoat_prev_path: str):
     if layer_number == 1:
-        CURRENT_PRINTER_DETAILS['PROJECT_ID'] = create_new_project(3000)
+        CURRENT_PRINTER_DETAILS['PROJECT_ID'] = create_new_project(
+            3000, '213213', project_name)
 
     if layer_number < 1:
         return {"warns": [], "project_id": CURRENT_PRINTER_DETAILS['PROJECT_ID'], "order": layer_number,
@@ -48,7 +49,7 @@ def start(project_name: str, layer_number: int, svg_path: str, img_recoat_path: 
     t = time.time()
 
     img = cv2.imread(img_recoat_path)
-    img = processing(img)
+    # img = processing(img)
     img_bytes = cv2.imencode('.jpg', img)[1].tobytes()
 
     after_melting_img = cv2.imread(img_scan_path)
@@ -58,7 +59,7 @@ def start(project_name: str, layer_number: int, svg_path: str, img_recoat_path: 
     # after_melting_img_bytes = cv2.imencode('.jpg', after_melting_img)[1].tobytes()
 
     prev_img = cv2.imread(img_recoat_prev_path)
-    prev_img = processing(prev_img)
+    # prev_img = processing(prev_img)
     prev_img_bytes = cv2.imencode('.jpg', prev_img)[1].tobytes()
 
     print('IMAGES PROCESSED', time.time() - t)

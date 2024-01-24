@@ -5,3 +5,5 @@ services:
       dockerfile: Dockerfile
     ports:
       - 9080
+    volumes:
+      - '/home/balexa/PycharmProjects/SurdoGram/all_printers'
