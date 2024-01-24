@@ -4,7 +4,7 @@ from torchvision import transforms
 import torch.nn.functional as F
 from celery import Celery
 import numpy as np
-from utils import get_defects_info
+from utils import get_defects_info, cut_image_by_mask
 from ultralytics import YOLO
 import cv2
 import pickle
@@ -78,8 +78,8 @@ def classify_metal_absence(img: np.array, prev_img: np.array, svg: np.array) -> 
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     prev_img = cv2.cvtColor(prev_img, cv2.COLOR_BGR2GRAY)
 
-    cut_img = cv2.bitwise_and(img, img, mask=svg)
-    cut_prev_img = cv2.bitwise_and(prev_img, prev_img, mask=svg)
+    cut_img = cut_image_by_mask(img, svg)
+    cut_prev_img = cut_image_by_mask(prev_img, svg)
 
     comparing = peak_signal_noise_ratio(cut_img, cut_prev_img)
     similarity_metric = classifier.predict([[comparing]])[0]

@@ -33,6 +33,16 @@ def get_defects_info(results, svg_data, image_data, show=False):
     return error_ratio, overlapped_image
 
 
+def cut_image_by_mask(img, mask):
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    mask = np.zeros_like(mask, dtype=np.uint8)
+    cv2.drawContours(mask, contours, -1, 255, thickness=cv2.FILLED)
+    dilated_mask = cv2.dilate(mask, np.ones((14, 14), dtype=np.uint8))
+    result = cv2.bitwise_and(img, img, mask=dilated_mask)
+    return result
+
+
 def gaussian_stretching(pixel_value, mean, sigma, A):
     # return A * (1 / (1 + np.exp(-((pixel_value - mean) / (sigma / 3)))) - 0.5) * 2
     return A * (0.5 + 0.5 * erf((pixel_value - mean) / (sigma * np.sqrt(2))))
