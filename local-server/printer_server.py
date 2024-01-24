@@ -113,7 +113,7 @@ def start(project_name: str, layer_number: int, svg_path: str, img_recoat_path: 
     # svg_bytes = open(svg_path, mode='rb').read()
     # svg_png_bytes = cairosvg.svg2png(bytestring=svg_bytes, output_width=800, output_height=800)
 
-    layer_id = setup_layer(layer_number, CURRENT_PRINTER_DETAILS['PROJECT_ID'], warns)
+    layer_id = setup_layer(layer_number, CURRENT_PRINTER_DETAILS['PROJECT_ID'], warns, result['recommendation'])
     response = add_photos_to_layer(layer_id, img_flipped_bytes, after_metling_img_flipped_bytes,
                                    svg_png_bytes)
 

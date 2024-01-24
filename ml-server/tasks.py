@@ -158,7 +158,8 @@ def evaluate_layer(recoat_img: bytes, previous_recoat_img: bytes, svg: bytes) ->
     inference_funcs = [classify_metal_absence, detect_defected_wiper]
 
     server_response = {'visualizations': [],
-                       'alerts': []}
+                       'alerts': [],
+                       'recommendation': ''}
     for inference_func in inference_funcs:
         # launch new module
         func_response = inference_func(recoat_img.copy(), previous_recoat_img.copy(), svg.copy())
