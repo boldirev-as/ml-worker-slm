@@ -23,7 +23,7 @@ yolo_model = YOLO("models/yolo_model_segm.engine", task="segment")
 # lazer_model.eval()
 
 # open dump model for classification wiper
-with open('models\model_regression_cut.pkl', 'rb') as f:  # open dump model
+with open('models/model_regression_cut.pkl', 'rb') as f:  # open dump model
     classifier = pickle.load(f)
 
 

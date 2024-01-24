@@ -1,6 +1,5 @@
 import time
 
-import cairosvg
 import cv2
 from celery import Celery
 from fastapi import FastAPI, status
