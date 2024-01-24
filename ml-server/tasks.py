@@ -85,17 +85,19 @@ def classify_metal_absence(img: np.array, prev_img: np.array, svg: np.array) -> 
     similarity_metric = classifier.predict([[comparing]])[0]
 
     alerts = []
+    recommendation = ''
     if similarity_metric > 0.5:
         alerts.append({
             'value': float(similarity_metric),
             'info': 'There is no enough metal in SLM container',
             'error_type': 'METAL_ABSENCE'
         })
+        recommendation = 'stop'
 
     return {
         'visualizations': None,
         'alerts': alerts,
-        'recommendation': 'stop'
+        'recommendation': recommendation
     }
 
 
@@ -115,17 +117,19 @@ def detect_defected_wiper(img: np.array, prev_img: np.array, svg: np.array) -> d
     np_annotated_frame = np.array(annotated_frame.convert('RGB'))
 
     alerts = []
+    recommendation = ''
     if results[0].masks is not None:
         alerts.append({
             'value': error_ratio,
             'info': 'Wiper defected and can affect the result of SLM',
             'error_type': 'WIPER_DEFECTED'
         })
+        recommendation = 'stop' if error_ratio > 0 else 'ignore'
 
     return {
         'visualizations': np_annotated_frame,
         'alerts': alerts,
-        'recommendation': 'stop' if error_ratio > 0 else 'ignore'
+        'recommendation': recommendation
     }
 
 
@@ -171,7 +175,7 @@ def evaluate_layer(recoat_img: bytes, previous_recoat_img: bytes, svg: bytes) ->
             server_response['visualizations'].append(
                 img_bytes
             )
-        if func_response['alerts'] is not None:
+        if len(func_response['alerts']) != 0:
             server_response['alerts'].extend(func_response['alerts'])
             server_response['recommendation'] = func_response['recommendation']
             # in case of lazer (or other stuff) on photo we are not able to launch
