@@ -6,12 +6,13 @@ URL_BACKEND = 'http://158.160.126.165:8000/'
 
 def create_new_printer(uid='213213', name='SLM 3d Midi', description='my little pony'):
     with Client() as client:
-        response = client.post(URL_BACKEND + 'printers',
+        response = client.post(URL_BACKEND + 'printers/',
                                json={
                                    'uid': uid,
                                    'name': name,
                                    'description': description
                                })
+        print(response.text, response.status_code, response.url)
     return response
 
 
@@ -58,11 +59,11 @@ def add_photos_to_layer(layer_id, before_melting_img, after_melting_img, svg_img
 if __name__ == '__main__':
     # setup_layer(0, '65a8c92d3b36820d63d99ff6', [])
     # 65a8c92d3b36820d63d99ff6
-    create_new_printer()
-    project_id = create_new_project(3000, '213213', 'New project')
+    create_new_printer('123456', 'SLM 3d Midi dev', 'Printer for integration and tests')
+    # project_id = create_new_project(3000, '213213', 'New project')
     # project_id = '65a93274fa30c179992ab501'
     #
-    print(project_id)
+    # print(project_id)
     #
     # layer_id = setup_layer(0, project_id, [], main_client)
     # print(layer_id)

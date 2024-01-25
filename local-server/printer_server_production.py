@@ -25,7 +25,8 @@ celery_client = Celery('tasks', broker='redis://0.0.0.0:8010',
 
 CURRENT_PRINTER_DETAILS = {
     'PRINTER_UID': '213213',
-    'PROJECT_ID': '65b0053215cc3ebf6d57c835'
+    'PROJECT_ID': '65b0053215cc3ebf6d57c835',
+    'LAST_STATE': None
 }
 
 REASON_TO_ID = {
@@ -112,7 +113,8 @@ def start_processing(project_name: str, layer_number: int):
     t = time.time()
 
     task = celery_client.send_task('tasks.evaluate_layer',
-                                   (img_bytes, prev_img_bytes, svg_bytes))
+                                   (img_bytes, prev_img_bytes, svg_bytes,
+                                    CURRENT_PRINTER_DETAILS['LAST_STATE']))
 
     try:
         result = task.get()
@@ -130,14 +132,19 @@ def start_processing(project_name: str, layer_number: int):
         img_viz_array = np.frombuffer(img_bytes, np.uint8)
         img_viz = cv2.imdecode(img_viz_array, cv2.IMREAD_COLOR)
     else:
-        img_viz = img
+        img_viz = processing(img)
 
     img_flipped = np.rot90(np.fliplr(img_viz), k=3)
     img_flipped_bytes = cv2.imencode('.jpg', img_flipped)[1].tobytes()
 
     # SEND WORK TO back
     warns = []
+    CURRENT_PRINTER_DETAILS['LAST_STATE'] = None
     for alert in result['alerts']:
+        CURRENT_PRINTER_DETAILS['LAST_STATE'] = alert['error_type']
+        if alert['error_type'] == 'LAZER_INSTANCE':
+            continue
+
         warns.append({
             'reason': REASON_TO_ID[alert['error_type']],
             'rate': alert['value']

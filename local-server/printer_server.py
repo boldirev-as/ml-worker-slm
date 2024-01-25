@@ -21,7 +21,8 @@ celery_client = Celery('tasks', broker='redis://46.45.33.28:22080',
 
 CURRENT_PRINTER_DETAILS = {
     'PRINTER_UID': '213213',
-    'PROJECT_ID': '65b0053215cc3ebf6d57c835'
+    'PROJECT_ID': '65b0053215cc3ebf6d57c835',
+    'LAST_STATE': None
 }
 
 REASON_TO_ID = {
@@ -33,15 +34,23 @@ REASON_TO_ID = {
 app = FastAPI()
 
 
-@app.get("/start_processing/")
-def start(project_name: str, layer_number: int, svg_path: str, img_recoat_path: str, img_scan_path: str,
-          img_recoat_prev_path: str):
-    if layer_number == 1:
-        CURRENT_PRINTER_DETAILS['PROJECT_ID'] = create_new_project(
-            3000, '213213', project_name)
+@app.get("/create_project")
+def create_project(project_name: str, total_number_layers: int):
+    CURRENT_PRINTER_DETAILS['PROJECT_ID'] = create_new_project(
+        total_number_layers, CURRENT_PRINTER_DETAILS['PRINTER_UID'], project_name)
+    return JSONResponse(
+        content={
+            'project_id': CURRENT_PRINTER_DETAILS['PROJECT_ID']
+        },
+        status_code=status.HTTP_200_OK
+    )
 
+
+@app.get("/start_processing")
+def start(project_id: str, layer_number: int, svg_path: str, img_recoat_path: str, img_scan_path: str,
+          img_recoat_prev_path: str):
     if layer_number < 1:
-        return {"warns": [], "project_id": CURRENT_PRINTER_DETAILS['PROJECT_ID'], "order": layer_number,
+        return {"warns": [], "project_id": project_id, "order": layer_number,
                 "printer_uid": "", "before_melting_image": "",
                 "after_melting_image": "",
                 "svg_image": "", "id": ""}
@@ -78,7 +87,8 @@ def start(project_name: str, layer_number: int, svg_path: str, img_recoat_path: 
     t = time.time()
 
     task = celery_client.send_task('tasks.evaluate_layer',
-                                   (img_bytes, prev_img_bytes, svg_bytes))
+                                   (img_bytes, prev_img_bytes, svg_bytes,
+                                    CURRENT_PRINTER_DETAILS['LAST_STATE']))
 
     try:
         result = task.get()
@@ -96,14 +106,19 @@ def start(project_name: str, layer_number: int, svg_path: str, img_recoat_path: 
         img_viz_array = np.frombuffer(img_bytes, np.uint8)
         img_viz = cv2.imdecode(img_viz_array, cv2.IMREAD_COLOR)
     else:
-        img_viz = img
+        img_viz = processing(img)
 
     img_flipped = np.rot90(np.fliplr(img_viz), k=3)
     img_flipped_bytes = cv2.imencode('.jpg', img_flipped)[1].tobytes()
 
     # SEND WORK TO back
     warns = []
+    CURRENT_PRINTER_DETAILS['LAST_STATE'] = None
     for alert in result['alerts']:
+        CURRENT_PRINTER_DETAILS['LAST_STATE'] = alert['error_type']
+        if alert['error_type'] == 'LAZER_INSTANCE':
+            continue
+
         warns.append({
             'reason': REASON_TO_ID[alert['error_type']],
             'rate': alert['value']
@@ -118,7 +133,7 @@ def start(project_name: str, layer_number: int, svg_path: str, img_recoat_path: 
     # svg_bytes = open(svg_path, mode='rb').read()
     # svg_png_bytes = cairosvg.svg2png(bytestring=svg_bytes, output_width=800, output_height=800)
 
-    layer_id = setup_layer(layer_number, CURRENT_PRINTER_DETAILS['PROJECT_ID'], warns, result['recommendation'])
+    layer_id = setup_layer(layer_number, project_id, warns, result['recommendation'])
     response = add_photos_to_layer(layer_id, img_flipped_bytes, after_metling_img_flipped_bytes,
                                    svg_png_bytes)
 

@@ -132,16 +132,26 @@ def detect_defected_wiper(img: np.array, prev_img: np.array, svg: np.array) -> d
 
 
 @app.task
-def evaluate_layer(recoat_img: bytes, previous_recoat_img: bytes, svg: bytes) -> dict:
+def evaluate_layer(recoat_img: bytes, previous_recoat_img: bytes, svg: bytes, last_state: str = None) -> dict:
     """
-    celery task for searching deffects in one layer, using svg file, scan and recoat images
+    celery task for searching defects in one layer, using svg file, scan and recoat images
 
+    :param last_state: result of previous detection
     :param recoat_img: image from recoat stage in current layer (cv2 bytes)
     :param previous_recoat_img: image from recoat stage in previous layer (cv2 bytes)
     :param svg: svg file for current layer (np mask bytes)
     :return: dict file with images for visualization defects and
     a list with alerts + info
     """
+
+    server_response = {
+        'visualizations': [],
+        'alerts': [],
+        'recommendation': ''
+    }
+
+    if last_state is not None:
+        return server_response
 
     # Load all files from bytes format
     nparr = np.frombuffer(recoat_img, np.uint8)
@@ -160,16 +170,11 @@ def evaluate_layer(recoat_img: bytes, previous_recoat_img: bytes, svg: bytes) ->
 
     # modules for detection defects
     inference_funcs = [
-        (detect_lazer, {'use_preprocessed': False, 'add_to_response': False}),
+        (detect_lazer, {'use_preprocessed': False}),
         (classify_metal_absence, {}),
         (detect_defected_wiper, {})
     ]
 
-    server_response = {
-        'visualizations': [],
-        'alerts': [],
-        'recommendation': ''
-    }
     for inference_func, func_metadata in inference_funcs:
         # launch new module
         if func_metadata.get('use_preprocessed', True) is True:
