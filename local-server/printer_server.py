@@ -20,7 +20,7 @@ celery_client = Celery('tasks', broker='redis://46.45.33.28:22080',
                        backend='redis://46.45.33.28:22080')
 
 CURRENT_PRINTER_DETAILS = {
-    'PRINTER_UID': '213213',
+    'PRINTER_UID': '123456',
     'PROJECT_ID': '65b0053215cc3ebf6d57c835',
     'LAST_STATE': None
 }
@@ -48,12 +48,15 @@ def create_project(project_name: str, total_number_layers: int):
 
 @app.get("/start_processing")
 def start(project_id: str, layer_number: int, svg_path: str, img_recoat_path: str, img_scan_path: str,
-          img_recoat_prev_path: str):
+          img_recoat_prev_path: str, drop_last_state: bool = False):
     if layer_number < 1:
         return {"warns": [], "project_id": project_id, "order": layer_number,
                 "printer_uid": "", "before_melting_image": "",
                 "after_melting_image": "",
                 "svg_image": "", "id": ""}
+
+    if drop_last_state:
+        CURRENT_PRINTER_DETAILS['LAST_STATE'] = None
 
     t = time.time()
 

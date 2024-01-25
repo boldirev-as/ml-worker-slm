@@ -112,12 +112,15 @@ def detect_defected_wiper(img: np.array, prev_img: np.array, svg: np.array) -> d
     """
 
     results = yolo_model.predict([img], imgsz=YOLO_IMG_SIZE)
-    error_ratio, annotated_frame = get_defects_info(results, svg, img)
-    np_annotated_frame = np.array(annotated_frame.convert('RGB'))
 
     alerts = []
     recommendation = ''
+    np_annotated_frame = None
     if results[0].masks is not None:
+
+        error_ratio, annotated_frame = get_defects_info(results, svg, img)
+        np_annotated_frame = np.array(annotated_frame.convert('RGB'))
+
         alerts.append({
             'value': error_ratio,
             'info': 'Wiper defected and can affect the result of SLM',

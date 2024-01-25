@@ -32,14 +32,7 @@ def gaussian_stretching(pixel_value, mean, sigma, A):
 def processing(img):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    f1 = 6
-    height, width = img.shape
-    mask = np.zeros((height, width), dtype=np.uint8)
-
-    center = (height // 2, width // 2)
-    radius = min(width, height) // 2
-    cv2.circle(mask, center, radius, (255, 255, 255), thickness=-1)
-    img = cv2.bitwise_and(img, img, mask=mask)
+    img = crop_image(img)
 
     mean = np.mean(img)
     sigma = np.std(img)
@@ -51,3 +44,14 @@ def processing(img):
     img = cv2.bilateralFilter(out, 5, 120, 120)
     backtorgb = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
     return backtorgb
+
+
+def crop_image(img):
+    height, width = img.shape
+    mask = np.zeros((height, width), dtype=np.uint8)
+
+    center = (height // 2, width // 2)
+    radius = min(width, height) // 2
+    cv2.circle(mask, center, radius, (255, 255, 255), thickness=-1)
+    img = cv2.bitwise_and(img, img, mask=mask)
+    return img
