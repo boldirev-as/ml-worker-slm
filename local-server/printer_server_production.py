@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 import configparser
 
 import numpy as np
+from httpx import Client
 
 from requests_for_backend import setup_layer, add_photos_to_layer, create_new_project
 from utils import get_svg_data, processing
@@ -17,10 +18,10 @@ import io
 config = configparser.ConfigParser()
 config.read("settings.ini")
 
-# celery_client = Celery('tasks', broker='redis://0.0.0.0:8010',
-#                        backend='redis://0.0.0.0:8010')
-celery_client = Celery('tasks', broker='redis://46.45.33.28:22080',
-                       backend='redis://46.45.33.28:22080')
+celery_client = Celery('tasks', broker='redis://0.0.0.0:8010',
+                       backend='redis://0.0.0.0:8010')
+# celery_client = Celery('tasks', broker='redis://46.45.33.28:22080',
+#                        backend='redis://46.45.33.28:22080')
 
 CURRENT_PRINTER_DETAILS = {
     'PRINTER_UID': '213213',
@@ -33,20 +34,34 @@ REASON_TO_ID = {
     'LAZER_INSTANCE': 2
 }
 
+URL_FOR_PRINTER = 'http://192.168.112.183:36080'
+
 app = FastAPI()
 
 
-@app.get("/start_processing/")
-def start(project_name: str, layer_number: int, byte_array: bytes):
-    if layer_number == 1:
-        CURRENT_PRINTER_DETAILS['PROJECT_ID'] = create_new_project(
-            3000, '213213', project_name)
+def collect_tarfile(num_layer, name_project):
+    with Client() as client:
+        response = client.get(URL_FOR_PRINTER + '/download_layer',
+                              params=[('num_layer', num_layer), ('name_project', name_project)])
+    return response.content
 
+
+@app.get("/create_project")
+def create_project(project_name: str, total_number_layers: int):
+    CURRENT_PRINTER_DETAILS['PROJECT_ID'] = create_new_project(
+        total_number_layers, CURRENT_PRINTER_DETAILS['PRINTER_UID'], project_name)
+    return JSONResponse(content='ok', status_code=status.HTTP_200_OK)
+
+
+@app.get("/start_processing/")
+def start_processing(project_name: str, layer_number: int):
     if layer_number < 1:
         return {"warns": [], "project_id": CURRENT_PRINTER_DETAILS['PROJECT_ID'], "order": layer_number,
                 "printer_uid": "", "before_melting_image": "",
                 "after_melting_image": "",
                 "svg_image": "", "id": ""}
+
+    byte_array = collect_tarfile(layer_number, project_name)
 
     bytes_tar_object = io.BytesIO(byte_array)
     files = {
@@ -87,7 +102,7 @@ def start(project_name: str, layer_number: int, byte_array: bytes):
     t = time.time()
 
     svg_array, svg_png_bytes = get_svg_data(files['svg'].decode('utf8'))
-    svg_array = svg_array.astype('uint-8')
+    svg_array = svg_array.astype('uint8')
     svg_bytes = cv2.imencode('.jpg', svg_array)[1].tobytes()
 
     print('SHAPES', img.shape, svg_array.shape)
@@ -133,9 +148,6 @@ def start(project_name: str, layer_number: int, byte_array: bytes):
     print("WARNINGS PROCESSED", time.time() - t)
 
     t = time.time()
-
-    # svg_bytes = open(svg_path, mode='rb').read()
-    # svg_png_bytes = cairosvg.svg2png(bytestring=svg_bytes, output_width=800, output_height=800)
 
     layer_id = setup_layer(layer_number, CURRENT_PRINTER_DETAILS['PROJECT_ID'], warns, result['recommendation'])
     response = add_photos_to_layer(layer_id, img_flipped_bytes, after_metling_img_flipped_bytes,

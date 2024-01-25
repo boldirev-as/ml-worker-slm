@@ -40,7 +40,8 @@ def detect_lazer(img: np.array, prev_img: np.array, svg: np.array) -> dict:
     :return: dict with key alerts for information about issues (probability)
     """
 
-    img = Image.fromarray(img).convert('RGB')
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = Image.fromarray(img)
 
     transformed_image = transform(img).unsqueeze(0)
 
@@ -159,7 +160,7 @@ def evaluate_layer(recoat_img: bytes, previous_recoat_img: bytes, svg: bytes) ->
 
     # modules for detection defects
     inference_funcs = [
-        # (detect_lazer, {'use_preprocessed': False, 'add_to_response': False}),
+        (detect_lazer, {'use_preprocessed': False, 'add_to_response': False}),
         (classify_metal_absence, {}),
         (detect_defected_wiper, {})
     ]
