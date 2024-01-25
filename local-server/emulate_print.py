@@ -1,3 +1,5 @@
+import json
+
 import requests
 from tqdm import tqdm
 from requests_for_backend import create_new_project
@@ -43,13 +45,58 @@ PRINTER_DIR = '../../all_printers/'
 #     create_request(ALL_LAYERS, project_name, layer_number)
 #     ALL_LAYERS += 1
 
-project_id = create_new_project(3000, '123123', 'Деталь 1')
+CONFIGURE = True
+project_ids = {
+    'METAL ABSENCE': '',
+    'WIPER DEFECTED 1': '',
+    'WIPER DEFECTED 2': ''
+}
 
-# METAL ABSENCE
-for layer_number in tqdm(range(1067, 2000)):
+if CONFIGURE:
+    # METAL ABSENCE
+    project_id = create_new_project(3000, '123123', 'Деталь 1')
+    for layer_number in tqdm(range(1067, 1967)):
+        project_name = PRINTER_DIR + 'print3_fail_with_1967/2023-12-15 18%3A51%3A07'
+        create_request(ALL_LAYERS, project_name, layer_number)
+        ALL_LAYERS += 1
+    project_ids['METAL ABSENCE'] = project_id
+
+    # WIPER DEFECT reslice
+    project_id = create_new_project(3000, '123123', 'Деталь 2')
+    for layer_number in tqdm(range(300, 900)):
+        project_name = PRINTER_DIR + 'print4/2024-01-04 15%3A28%3A26'
+        create_request(ALL_LAYERS, project_name, layer_number)
+        ALL_LAYERS += 1
+    project_ids['WIPER DEFECTED 1'] = project_id
+
+    # Wiper defect ignore
+    project_id = create_new_project(3000, '123123', 'Деталь 3')
+    for layer_number in tqdm(range(300, 900)):
+        project_name = PRINTER_DIR + 'print4/2024-01-04 15%3A28%3A26'
+        create_request(ALL_LAYERS, project_name, layer_number)
+        ALL_LAYERS += 1
+    project_ids['WIPER DEFECTED 2'] = project_id
+else:
+    with open('projects.json', mode='r') as f:
+        project_ids = json.load(f)
+
+    # METAL ABSENCE
+    project_id = project_ids['METAL ABSENCE']
     project_name = PRINTER_DIR + 'print3_fail_with_1967/2023-12-15 18%3A51%3A07'
-    create_request(ALL_LAYERS, project_name, layer_number)
-    ALL_LAYERS += 1
+    create_request(900, project_name, 1967)
+
+    # WIPER DEFECT reslice
+    project_id = project_ids['WIPER DEFECTED 1']
+    project_name = PRINTER_DIR + 'print4/2024-01-04 15%3A28%3A26'
+    create_request(600, project_name, 1049)
+
+    # Wiper defect ignore
+    project_id = project_ids['WIPER DEFECTED 2']
+    project_name = PRINTER_DIR + 'print4/2024-01-04 15%3A28%3A26'
+    create_request(600, project_name, 1709)
+
+with open('projects.json', mode='w') as f:
+    json.dump(f, project_ids)
 
 # ALL GOOD
 # for layer_number in tqdm(range(700, 720)):

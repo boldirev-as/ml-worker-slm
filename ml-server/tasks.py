@@ -19,6 +19,7 @@ app.control.time_limit('tasks.evaluate_layer',
 
 # Load a model for segmentation
 yolo_model = YOLO("models/yolo_model_segm.engine", task="segment")
+YOLO_IMG_SIZE = 1024
 
 # open dump model for classification wiper
 with open('models/model_regression_cut.pkl', 'rb') as f:  # open dump model
@@ -110,7 +111,7 @@ def detect_defected_wiper(img: np.array, prev_img: np.array, svg: np.array) -> d
     for information about issues (metric - error rate)
     """
 
-    results = yolo_model.predict([img], imgsz=1024)
+    results = yolo_model.predict([img], imgsz=YOLO_IMG_SIZE)
     error_ratio, annotated_frame = get_defects_info(results, svg, img)
     np_annotated_frame = np.array(annotated_frame.convert('RGB'))
 
@@ -165,8 +166,8 @@ def evaluate_layer(recoat_img: bytes, previous_recoat_img: bytes, svg: bytes, la
     # decode svg layer to bin mask
     nparr = np.frombuffer(svg, np.uint8)
     svg = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    svg = cv2.resize(svg, (1024, 1024))
-    svg = svg[:, :, 0].reshape((1024, 1024)).astype(bool)
+    svg = cv2.resize(svg, (YOLO_IMG_SIZE, YOLO_IMG_SIZE))
+    svg = svg[:, :, 0].reshape((YOLO_IMG_SIZE, YOLO_IMG_SIZE)).astype(bool)
 
     # modules for detection defects
     inference_funcs = [
