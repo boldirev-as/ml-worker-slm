@@ -11,6 +11,9 @@ import numpy as np
 from requests_for_backend import setup_layer, add_photos_to_layer, create_new_project
 from utils import get_svg_data, processing
 
+import tarfile
+import io
+
 config = configparser.ConfigParser()
 config.read("settings.ini")
 
@@ -34,8 +37,7 @@ app = FastAPI()
 
 
 @app.get("/start_processing/")
-def start(project_name: str, layer_number: int, svg_path: str, img_recoat_path: str, img_scan_path: str,
-          img_recoat_prev_path: str):
+def start(project_name: str, layer_number: int, byte_array: bytes):
     if layer_number == 1:
         CURRENT_PRINTER_DETAILS['PROJECT_ID'] = create_new_project(
             3000, '213213', project_name)
@@ -46,29 +48,46 @@ def start(project_name: str, layer_number: int, svg_path: str, img_recoat_path: 
                 "after_melting_image": "",
                 "svg_image": "", "id": ""}
 
+    bytes_tar_object = io.BytesIO(byte_array)
+    files = {
+        'recoat_cur': None,
+        'recoat_prev': None,
+        'scan_cur': None,
+        'svg': None
+    }
+    with tarfile.open(fileobj=bytes_tar_object) as tar:
+        for member in tar.getmembers():
+            bytes_file = tar.extractfile(member).read()
+            if f'{layer_number}-recoat' in member.name:
+                files['recoat_cur'] = bytes_file
+            elif f'{layer_number}-scan' in member.name:
+                files['scan_cur'] = bytes_file
+            elif f'{layer_number - 1}-recoat' in member.name:
+                files['recoat_prev'] = bytes_file
+            elif 'svg' in member.name:
+                files['svg'] = bytes_file
+
     t = time.time()
 
-    img = cv2.imread(img_recoat_path)
-    # img = processing(img)
+    nparr = np.frombuffer(files['recoat_cur'], np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     img_bytes = cv2.imencode('.jpg', img)[1].tobytes()
 
-    after_melting_img = cv2.imread(img_scan_path)
+    nparr = np.frombuffer(files['scan_cur'], np.uint8)
+    after_melting_img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     after_melting_img_processed = processing(after_melting_img)
     after_metling_img_flipped = np.rot90(np.fliplr(after_melting_img_processed), k=3)
     after_metling_img_flipped_bytes = cv2.imencode('.jpg', after_metling_img_flipped)[1].tobytes()
-    # after_melting_img_bytes = cv2.imencode('.jpg', after_melting_img)[1].tobytes()
 
-    prev_img = cv2.imread(img_recoat_prev_path)
-    # prev_img = processing(prev_img)
+    nparr = np.frombuffer(files['recoat_prev'], np.uint8)
+    prev_img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     prev_img_bytes = cv2.imencode('.jpg', prev_img)[1].tobytes()
 
     print('IMAGES PROCESSED', time.time() - t)
     t = time.time()
 
-    with open(svg_path) as svg_file:
-        svg_content = svg_file.read()
-    svg_array, svg_png_bytes = get_svg_data(svg_content)
-    svg_array = svg_array.astype('uint8')
+    svg_array, svg_png_bytes = get_svg_data(files['svg'].decode('utf8'))
+    svg_array = svg_array.astype('uint-8')
     svg_bytes = cv2.imencode('.jpg', svg_array)[1].tobytes()
 
     print('SHAPES', img.shape, svg_array.shape)

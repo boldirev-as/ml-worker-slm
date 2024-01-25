@@ -8,9 +8,7 @@ from scipy.special import erf
 import numpy as np
 
 
-def get_svg_data(svg_path):
-    with open(svg_path) as svg_file:
-        svg_content = svg_file.read()
+def get_svg_data(svg_content: str):
     soup = BeautifulSoup(svg_content, 'xml')
     g_element = soup.find('g')
     if g_element:
