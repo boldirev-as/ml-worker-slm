@@ -3,7 +3,6 @@ import scipy
 from PIL import Image
 from celery import Celery
 import numpy as np
-from torchvision import transforms
 
 from utils import get_defects_info, cut_image_by_mask, processing
 from ultralytics import YOLO
@@ -25,11 +24,7 @@ YOLO_IMG_SIZE = 1024
 with open('models/model_regression_cut.pkl', 'rb') as f:  # open dump model
     classifier = pickle.load(f)
 
-ort_session = onnxruntime.InferenceSession("models/lazer_classifier.onnx")
-transform = transforms.Compose([
-    transforms.Resize((256, 256)),
-    transforms.ToTensor()
-])
+ort_session = onnxruntime.InferenceSession("models/model.onnx")
 
 
 def detect_lazer(img: np.array, prev_img: np.array, svg: np.array) -> dict:
@@ -42,11 +37,21 @@ def detect_lazer(img: np.array, prev_img: np.array, svg: np.array) -> dict:
     """
 
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    img = Image.fromarray(img)
 
-    transformed_image = transform(img).unsqueeze(0)
+    height, width = img.shape[:2]
+    mask = np.zeros((height, width), dtype=np.uint8)
 
-    onnxruntime_outputs = ort_session.run(None, {'arg0': transformed_image.numpy()})
+    center = (height // 2, width // 2)
+    radius = min(width, height) // 2
+    cv2.circle(mask, center, radius, (255, 255, 255), thickness=-1)
+    img = cv2.bitwise_and(img, img, mask=mask)
+
+    img = Image.fromarray(img).resize((256, 256), 1)
+    img = np.array(img)
+    img = img.astype(np.float32) / 255
+    img = ((img * 2) - 1).transpose(2, 0, 1)
+
+    onnxruntime_outputs = ort_session.run(None, {'arg0': img[None]})
 
     error_prob = scipy.special.softmax(onnxruntime_outputs[0])[0][1]
 
@@ -60,7 +65,8 @@ def detect_lazer(img: np.array, prev_img: np.array, svg: np.array) -> dict:
 
     return {
         'visualizations': None,
-        'alerts': alerts
+        'alerts': alerts,
+        'recommendation': ''
     }
 
 
@@ -117,7 +123,6 @@ def detect_defected_wiper(img: np.array, prev_img: np.array, svg: np.array) -> d
     recommendation = ''
     np_annotated_frame = None
     if results[0].masks is not None:
-
         error_ratio, annotated_frame = get_defects_info(results, svg, img)
         np_annotated_frame = np.array(annotated_frame.convert('RGB'))
 

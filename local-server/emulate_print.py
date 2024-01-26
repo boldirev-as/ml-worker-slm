@@ -59,7 +59,7 @@ PRINTER_DIR = '../all_printers/'
 #     create_request(ALL_LAYERS, project_name, layer_number)
 #     ALL_LAYERS += 1
 
-CONFIGURE = False
+CONFIGURE = True
 project_ids = {
     'METAL ABSENCE': '',
     'WIPER DEFECTED 1': '',
@@ -95,7 +95,7 @@ else:
     with open('projects.json', mode='r') as f:
         project_ids = json.load(f)
 
-    sleep(180)
+    # sleep(180)
 
     # METAL ABSENCE
     project_id = project_ids['METAL ABSENCE']

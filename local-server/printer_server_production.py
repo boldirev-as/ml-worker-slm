@@ -54,7 +54,7 @@ def create_project(project_name: str, total_number_layers: int):
     return JSONResponse(content='ok', status_code=status.HTTP_200_OK)
 
 
-@app.get("/start_processing/")
+@app.get("/start_processing")
 def start_processing(project_name: str, layer_number: int):
     if layer_number < 1:
         return {"warns": [], "project_id": CURRENT_PRINTER_DETAILS['PROJECT_ID'], "order": layer_number,
